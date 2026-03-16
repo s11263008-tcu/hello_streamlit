@@ -32,19 +32,25 @@ def load_messages() -> pd.DataFrame:
 # 讓使用者輸入暱稱，預設為 Anonymous
 name = st.text_input("你的暱稱", value="Anonymous")
 
-# 讀取並顯示最新 50 則訊息
-messages_df = load_messages()
-if messages_df.empty:
-    st.info("目前還沒有訊息。")
-else:
-    for row in messages_df.tail(50).itertuples(index=False):
-        sender = row.name if str(row.name).strip() else "Anonymous"
-        timestamp = str(row.timestamp)
-        # 用聊天泡泡樣式顯示每則訊息
-        with st.chat_message("user"):
-            st.markdown(f"**{sender}**  ")
-            st.write(row.message)
-            st.caption(timestamp)  # 顯示發送時間
+
+# 用 fragment 讓訊息區塊每 5 秒自動重新從 Google Sheet 讀取，實現即時更新
+@st.fragment(run_every=5)
+def show_messages():
+    messages_df = load_messages()
+    if messages_df.empty:
+        st.info("目前還沒有訊息。")
+    else:
+        for row in messages_df.tail(50).itertuples(index=False):
+            sender = row.name if str(row.name).strip() else "Anonymous"
+            timestamp = str(row.timestamp)
+            # 用聊天泡泡樣式顯示每則訊息
+            with st.chat_message("user"):
+                st.markdown(f"**{sender}**  ")
+                st.write(row.message)
+                st.caption(timestamp)  # 顯示發送時間
+
+
+show_messages()
 
 # 底部輸入框，使用者輸入後按 Enter 或點送出即觸發
 chat_text = st.chat_input("輸入訊息...")
